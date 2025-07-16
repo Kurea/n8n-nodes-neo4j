@@ -147,7 +147,7 @@ export class Neo4j implements INodeType {
 				displayOptions: {
 					show: {
 						resource: ['vectorStore'],
-						operation: ['similaritySearch'],
+						operation: ['similaritySearch', 'addTexts'],
 					},
 				},
 				options: [
@@ -283,7 +283,6 @@ export class Neo4j implements INodeType {
 			username: credentials.username as string, // Username for Neo4j authentication
 			password: credentials.password as string, // Password for Neo4j authentication
 			database: credentials.database as string,
-			//indexName: this.getNodeParameter('indexName', 0) as string,
 			//embeddingNodeProperty: "embedding",
 			textNodeProperties: ["text"],
 		  };
@@ -301,6 +300,7 @@ export class Neo4j implements INodeType {
 					distanceMetric: moreOptions.distanceMetric ? moreOptions.distanceMetric : 'COSINE',
 					embeddingNodeProperty: "embedding",
 					searchType: "vector" as const,
+					indexName: this.getNodeParameter('indexName', 0) as string
 				}
 
 				const vectorStore = await Neo4jVectorStore.fromExistingIndex(
