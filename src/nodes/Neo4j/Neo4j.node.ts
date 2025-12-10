@@ -3,7 +3,7 @@ import {
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
-	NodeConnectionType,
+	NodeConnectionTypes,
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Neo4jGraph } from '@langchain/community/graphs/neo4j_graph';
@@ -27,15 +27,15 @@ export class Neo4j implements INodeType {
 			((parameters) => {
 				const mode = parameters?.mode;
                 const resource = parameters?.resource;
-                const inputs = [{ displayName: "", type: "${NodeConnectionType.Main}"}]
+                const inputs = [{ displayName: "", type: "${NodeConnectionTypes.Main}"}]
 
 				if (resource === 'vectorStore') {
-					inputs.push({ displayName: "Embedding", type: "${NodeConnectionType.AiEmbedding}", required: true, maxConnections: 1})
+					inputs.push({ displayName: "Embedding", type: "${NodeConnectionTypes.AiEmbedding}", required: true, maxConnections: 1})
 				}
 				return inputs
 			})($parameter)
 		}}`,
-		outputs: [NodeConnectionType.Main],
+		outputs: ['main'],
 		credentials: [
 			{
 				name: 'neo4jApi',
@@ -64,6 +64,7 @@ export class Neo4j implements INodeType {
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
+				noDataExpression: true,
 				displayOptions: {
 					show: {
 						resource: ['vectorStore'],
@@ -73,10 +74,12 @@ export class Neo4j implements INodeType {
 					{
 						name: 'Similarity Search',
 						value: 'similaritySearch',
+						action: 'Similarity search a vector store',
 					},
 					{
 						name: 'Add Texts',
 						value: 'addTexts',
+						action: 'Add texts a vector store',
 					}
 				],
 				default: 'similaritySearch',
@@ -85,6 +88,7 @@ export class Neo4j implements INodeType {
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
+				noDataExpression: true,
 				displayOptions: {
 					show: {
 						resource: ['graphDb'],
@@ -94,18 +98,22 @@ export class Neo4j implements INodeType {
 					{
 						name: 'Execute Query',
 						value: 'executeQuery',
+						action: 'Execute query a graph db',
 					},
 					{
 						name: 'Create Node',
 						value: 'createNode',
+						action: 'Create node a graph db',
 					},
 					{
 						name: 'Create Relationship',
 						value: 'createRelationship',
+						action: 'Create relationship a graph db',
 					},
 					{
 						name: 'Get Schema',
 						value: 'getSchema',
+						action: 'Get schema a graph db',
 					},
 				],
 				default: 'executeQuery',
@@ -115,7 +123,6 @@ export class Neo4j implements INodeType {
 				displayName: 'Index Name',
 				name: 'indexName',
 				type: 'string',
-				required: false,
 				displayOptions: {
 					show: {
 						resource: ['vectorStore', 'graphDb']
@@ -163,20 +170,20 @@ export class Neo4j implements INodeType {
 								value: 'COSINE',
 							},
 							{
+								name: 'Dot Product',
+								value: 'DOT_PRODUCT',
+							},
+							{
 								name: 'Euclidean',
 								value: 'EUCLIDEAN_DISTANCE',
 							},
 							{
-								name: 'Max Inner Product',
-								value: 'MAX_INNER_PRODUCT',
-							},
-							{
-								name: 'Dot Product',
-								value: 'DOT_PRODUCT',
-							},	
-							{
 								name: 'Jaccard',
 								value: 'JACCARD',
+							},
+							{
+								name: 'Max Inner Product',
+								value: 'MAX_INNER_PRODUCT',
 							}
 						],
 					},
@@ -291,7 +298,7 @@ export class Neo4j implements INodeType {
 		try {
 			if (resource === 'vectorStore') {
                 const embeddings = (await this.getInputConnectionData(
-                    NodeConnectionType.AiEmbedding,
+                    NodeConnectionTypes.AiEmbedding,
                     0,
                 )) as Embeddings;
 				const moreOptions = this.getNodeParameter('moreOptions', 0) as { metadataFilter?: string, retrievalQuery?: string, distanceMetric?: string };
@@ -321,7 +328,7 @@ export class Neo4j implements INodeType {
 							...doc.metadata
 						})))];
 					}
-	
+
 					if (operation === 'addTexts') {
 						const texts = this.getNodeParameter('texts', 0) as string[];
 						await vectorStore.addDocuments(texts.map(text => ({ pageContent: text, metadata: {} })));
@@ -384,4 +391,4 @@ export class Neo4j implements INodeType {
 
 		return [[]];
 	}
-} 
+}
